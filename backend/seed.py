@@ -138,13 +138,19 @@ def seed():
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     
-    # Seed default user
-    default_user = User(
-        username="sulthan",
-        password_hash=get_password_hash("sulthan"),
-        pfp_url="https://api.dicebear.com/7.x/avataaars/svg?seed=sulthan"
-    )
-    db.add(default_user)
+    # Seed default users
+    users = [
+        {"u": "sulthan", "p": "sulthan"},
+        {"u": "guest", "p": "guest"},
+        {"u": "agent_007", "p": "secret"}
+    ]
+    for u_data in users:
+        user = User(
+            username=u_data["u"],
+            password_hash=get_password_hash(u_data["p"]),
+            pfp_url=f"https://api.dicebear.com/7.x/avataaars/svg?seed={u_data['u']}"
+        )
+        db.add(user)
     
     books_data = [
         # Original 15
