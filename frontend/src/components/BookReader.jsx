@@ -7,19 +7,70 @@ import Sidebar from "./Sidebar";
 import Reader from "./Reader";
 
 export default function BookReader() {
-    const { id, pageId } = useParams(); // URL structured as /read/:id/:pageId (bookId/pageIndex)
+    const { id, pageId } = useParams();
     const navigate = useNavigate();
 
     const [book, setBook] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [sidebarOpen, setSidebarOpen] = useState(false); // Default to false for mobile
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [darkMode, setDarkMode] = useState(true);
+    const [fontSize, setFontSize] = useState(18);
+    const [currentChapter, setCurrentChapter] = useState(parseInt(pageId) || 0);
+    const [progress, setProgress] = useState(0);
+    const [chapters, setChapters] = useState([]);
 
-    // Detect screen size to set default sidebar state
+    const contentRef = useRef(null);
+
     useEffect(() => {
         if (window.innerWidth >= 768) {
             setSidebarOpen(true);
         }
     }, []);
+
+    useEffect(() => {
+        setLoading(true);
+        api.get(`/books/${id}`)
+            .then(res => {
+                setBook(res.data);
+                // Split multi-page content
+                const rawContent = res.data.fullStory || "";
+                const parts = rawContent.split("--------------------------------------------------");
+                const formatted = parts
+                    .filter(p => p.trim())
+                    .map(p => {
+                        const lines = p.trim().split("\n");
+                        return {
+                            title: lines[0].replace("## ", ""),
+                            content: lines.slice(1).join("\n").trim()
+                        };
+                    });
+                setChapters(formatted);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error(err);
+                setLoading(false);
+            });
+    }, [id]);
+
+    useEffect(() => {
+        setCurrentChapter(parseInt(pageId) || 0);
+        if (contentRef.current) contentRef.current.scrollTop = 0;
+    }, [pageId]);
+
+    const handleScroll = (e) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.target;
+        const scrolled = (scrollTop / (scrollHeight - clientHeight)) * 100;
+        setProgress(scrolled);
+    };
+
+    const onNavigate = (idx) => {
+        setCurrentChapter(idx);
+        navigate(`/read/${id}/${idx}`);
+        // Save progress to backend
+        api.post(`/books/${id}/progress`, { page_index: idx })
+            .catch(err => console.error("Save progress failed", err));
+    };
 
     const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
     const closeSidebar = () => setSidebarOpen(false);
@@ -33,12 +84,12 @@ export default function BookReader() {
                 >
                     <BookOpen size={48} className="text-blue-500" />
                 </motion.div>
-                <p className="mt-4 text-[10px] font-bold uppercase tracking-widest opacity-40">Loading Masterpiece...</p>
+                <p className={`mt-4 text-[10px] font-bold uppercase tracking-widest opacity-40 ${darkMode ? "text-white" : "text-black"}`}>Loading Masterpiece...</p>
             </div>
         );
     }
 
-    if (!book) return <div className="p-20 text-center text-white">Book not found.</div>;
+    if (!book || chapters.length === 0) return <div className="p-20 text-center text-white">Book not found or empty.</div>;
 
     return (
         <div className={`min-h-screen transition-colors duration-500 overflow-hidden ${darkMode ? "bg-[#0b1220] text-slate-300" : "bg-[#f8f9fa] text-slate-800"}`}>
@@ -46,8 +97,7 @@ export default function BookReader() {
             <div className="fixed top-0 left-0 right-0 h-1 z-[60] bg-white/5">
                 <motion.div
                     className="h-full bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.6)]"
-                    animate={{ width: `${progress}%` }}
-                    transition={{ type: "spring", stiffness: 100, damping: 20 }}
+                    style={{ width: `${progress}%` }}
                 />
             </div>
 
