@@ -243,8 +243,12 @@ async def upload_file(file: UploadFile = File(...), file_type: str = Form(...)):
         
     return {"url": f"/{path}"}
 
-@app.websocket("/ws/{token}")
-async def websocket_endpoint(websocket: WebSocket, token: str, db: Session = Depends(get_db)):
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket, token: str = None, db: Session = Depends(get_db)):
+    if not token:
+        # Check subprotocols as backup
+        token = websocket.headers.get("sec-websocket-protocol")
+        
     user = get_current_user(token, db)
     if not user:
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
