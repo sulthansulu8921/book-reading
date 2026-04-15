@@ -83,6 +83,13 @@ export default function SecretChat() {
     const sendMessage = async () => {
         if (!msgText.trim() || !activeChat) return;
 
+        if (ws.current?.readyState !== WebSocket.OPEN) {
+            console.error("Chat disconnected. State:", ws.current?.readyState);
+            alert("Connection lost. Reconnecting...");
+            window.location.reload(); // Simple brute-force recovery
+            return;
+        }
+
         if (editingMsg) {
             ws.current.send(JSON.stringify({
                 action: "edit",
