@@ -141,8 +141,7 @@ def seed():
     # Seed default users
     users = [
         {"u": "sulthan", "p": "sulthan"},
-        {"u": "guest", "p": "guest"},
-        {"u": "agent_007", "p": "secret"}
+        {"u": "fdhu", "p": "fdhu123"}
     ]
     for u_data in users:
         user = User(
