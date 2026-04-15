@@ -134,8 +134,7 @@ def seed():
     os.makedirs("static/covers", exist_ok=True)
     db = SessionLocal()
     
-    # Refresh tables
-    Base.metadata.drop_all(bind=engine)
+    # Create tables if they don't exist (don't drop)
     Base.metadata.create_all(bind=engine)
     
     # Seed default users

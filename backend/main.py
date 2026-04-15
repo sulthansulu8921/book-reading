@@ -27,16 +27,21 @@ app.add_middleware(
 
 @app.on_event("startup")
 def on_startup():
-    db = SessionLocal()
-    try:
-        if db.query(Book).count() == 0:
-            print("Database empty, seeding...")
-            from seed import seed
-            seed()
-    except Exception as e:
-        print(f"Startup seeding failed: {e}")
-    finally:
-        db.close()
+    def run_seed():
+        db = SessionLocal()
+        try:
+            if db.query(Book).count() == 0:
+                print("Database empty, seeding in background...")
+                from seed import seed
+                seed()
+                print("Seeding complete.")
+        except Exception as e:
+            print(f"Background seeding failed: {e}")
+        finally:
+            db.close()
+    
+    import threading
+    threading.Thread(target=run_seed, daemon=True).start()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
