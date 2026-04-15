@@ -93,18 +93,79 @@ def get_books(db: Session = Depends(get_db)):
     books = db.query(Book).all()
     return [{"id": b.id, "title": b.title, "cover": b.cover_url, "pdf": b.pdf_url, "isSecret": b.is_secret, "language": b.language} for b in books]
 
+class ProgressUpdate(BaseModel):
+    page_index: int
+
+@app.post("/api/books/{book_id}/progress")
+def update_progress(book_id: int, data: ProgressUpdate, db: Session = Depends(get_db), authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401)
+    token = authorization.split(" ")[1]
+    current_user = get_current_user(token, db)
+    if not current_user:
+        raise HTTPException(status_code=401)
+    
+    progress = db.query(ReadingProgress).filter(
+        ReadingProgress.user_id == current_user.id,
+        ReadingProgress.book_id == book_id
+    ).first()
+    
+    if not progress:
+        progress = ReadingProgress(user_id=current_user.id, book_id=book_id, last_page_index=data.page_index)
+        db.add(progress)
+    else:
+        progress.last_page_index = data.page_index
+        
+    db.commit()
+    return {"status": "success", "page": data.page_index}
+
+@app.get("/api/books/recent")
+def get_recent_books(db: Session = Depends(get_db), authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        return []
+    token = authorization.split(" ")[1]
+    current_user = get_current_user(token, db)
+    if not current_user:
+        return []
+    
+    progress_list = db.query(ReadingProgress).filter(
+        ReadingProgress.user_id == current_user.id
+    ).order_by(ReadingProgress.updated_at.desc()).limit(5).all()
+    
+    return [{
+        "id": p.book.id,
+        "title": p.book.title,
+        "cover": p.book.cover_url,
+        "lastPage": p.last_page_index,
+        "language": p.book.language
+    } for p in progress_list]
+
 @app.get("/api/books/{book_id}")
-def get_book(book_id: int, db: Session = Depends(get_db)):
+def get_book(book_id: int, db: Session = Depends(get_db), authorization: str = Header(None)):
     book = db.query(Book).filter(Book.id == book_id).first()
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
+    
+    last_page = 0
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split(" ")[1]
+        current_user = get_current_user(token, db)
+        if current_user:
+            progress = db.query(ReadingProgress).filter(
+                ReadingProgress.user_id == current_user.id,
+                ReadingProgress.book_id == book_id
+            ).first()
+            if progress:
+                last_page = progress.last_page_index
+
     return {
         "id": book.id,
         "title": book.title,
         "cover": book.cover_url,
         "fullStory": book.full_story,
         "language": book.language,
-        "isSecret": book.is_secret
+        "isSecret": book.is_secret,
+        "lastPage": last_page
     }
 
 # --- Chat/User Routes ---

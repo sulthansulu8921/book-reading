@@ -14,6 +14,8 @@ export default function BookGrid() {
     // Backend base URL for static assets
     const BACKEND_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
 
+    const [recentBooks, setRecentBooks] = useState([]);
+
     useEffect(() => {
         api.get("/books")
             .then(res => {
@@ -24,24 +26,25 @@ export default function BookGrid() {
                 console.error("Failed to fetch books", err);
                 setLoading(false);
             });
+
+        // Fetch recent reading progress
+        api.get("/api/books/recent")
+            .then(res => setRecentBooks(res.data))
+            .catch(err => console.error("Recent books failed", err));
     }, []);
 
     const handleBookClick = (book) => {
         if (book.isSecret) {
             navigate("/chat");
         } else {
-            navigate(`/read/${book.id}`);
+            // If it's a recent book, it has 'lastPage'
+            const page = book.lastPage || 0;
+            navigate(`/read/${book.id}/${page}`);
         }
     };
 
     const categories = ["All", "Malayalam", "Classics", "Modern"];
     const filteredBooks = filter === "All" ? books : books.filter(b => b.language === filter || (filter === "Classics" && b.title === "Randaamoozham"));
-
-    const getCoverUrl = (cover) => {
-        if (!cover) return "";
-        if (cover.startsWith("http")) return cover;
-        return `${BACKEND_BASE}${cover}`;
-    };
 
     if (loading) {
         return (
@@ -93,8 +96,51 @@ export default function BookGrid() {
                 </div>
             </div>
 
+            {/* Continue Reading Section (Conditional) */}
+            {recentBooks.length > 0 && filter === "All" && (
+                <div className="max-w-7xl mx-auto px-8 md:px-12 lg:px-16 pt-16">
+                    <div className="flex items-center gap-3 mb-8">
+                        <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
+                        <h2 className="text-xl font-black uppercase tracking-[0.2em] text-white">Continue Reading</h2>
+                    </div>
+
+                    <div className="flex gap-6 overflow-x-auto pb-8 snap-x no-scrollbar">
+                        {recentBooks.map((book) => (
+                            <motion.div
+                                key={`recent-${book.id}`}
+                                onClick={() => handleBookClick(book)}
+                                whileHover={{ scale: 1.02 }}
+                                className="flex-none w-72 h-44 group cursor-pointer snap-start relative rounded-3xl overflow-hidden bg-[#151b27] border border-white/5 shadow-2xl"
+                            >
+                                <div className="absolute inset-0 opacity-40 group-hover:opacity-60 transition-opacity">
+                                    <BookCover title={book.title} coverUrl={book.cover} />
+                                </div>
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-6 flex flex-col justify-end">
+                                    <h3 className="text-white font-black text-lg truncate mb-2">{book.title}</h3>
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-blue-500 rounded-full"
+                                                style={{ width: `${Math.min(100, (book.lastPage / 49) * 100)}%` }}
+                                            />
+                                        </div>
+                                        <span className="text-[10px] font-bold text-blue-400 uppercase">Page {book.lastPage + 1}</span>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Book Grid */}
             <div className="max-w-7xl mx-auto px-8 md:px-12 lg:px-16 py-16">
+                <div className="flex items-center gap-3 mb-10">
+                    <div className="w-1.5 h-6 bg-slate-600/30 rounded-full" />
+                    <h2 className="text-xl font-black uppercase tracking-[0.2em] text-white/50">
+                        {filter === "All" ? "Explore Masterpieces" : `${filter} Collection`}
+                    </h2>
+                </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8 md:gap-10">
                     <AnimatePresence mode="popLayout">
                         {filteredBooks.map((book, idx) => (

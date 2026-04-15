@@ -38,6 +38,14 @@ export default function BookReader() {
                         };
                     });
                     setChapters(parsed);
+
+                    // Resume Logic: If lastPage exists and we are at page 0
+                    if (bookData.lastPage > 0 && (!pageId || pageId === "0")) {
+                        const confirmResume = window.confirm(`Resume ${bookData.title} from page ${bookData.lastPage + 1}?`);
+                        if (confirmResume) {
+                            navigate(`/read/${id}/${bookData.lastPage}`);
+                        }
+                    }
                 }
                 setLoading(false);
             })
@@ -46,6 +54,14 @@ export default function BookReader() {
                 setLoading(false);
             });
     }, [id]);
+
+    // Auto-save progress
+    useEffect(() => {
+        if (currentChapter !== undefined && !loading) {
+            api.post(`/books/${id}/progress`, { page_index: currentChapter })
+                .catch(err => console.error("Failed to save progress", err));
+        }
+    }, [currentChapter, id, loading]);
 
     useEffect(() => {
         if (pageId !== undefined) {

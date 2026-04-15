@@ -56,4 +56,15 @@ class Message(Base):
     seen = Column(Boolean, default=False)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
 
+class ReadingProgress(Base):
+    __tablename__ = "reading_progress"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    book_id = Column(Integer, ForeignKey("books.id"))
+    last_page_index = Column(Integer, default=0)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    
+    book = relationship("Book")
+    user = relationship("User")
+
 Base.metadata.create_all(bind=engine)
