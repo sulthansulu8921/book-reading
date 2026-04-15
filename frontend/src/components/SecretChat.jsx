@@ -33,8 +33,13 @@ export default function SecretChat() {
         const rawUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
         const wsProtocol = rawUrl.startsWith("https") ? "wss" : "ws";
         const wsHost = rawUrl.replace(/^https?:\/\//, "").replace(/\/+$/, "").replace(/\/api$/, "");
+        const wsUrl = `${wsProtocol}://${wsHost}/ws/${token}`;
 
-        ws.current = new WebSocket(`${wsProtocol}://${wsHost}/ws/${token}`);
+        console.log("Connecting to WebSocket:", wsUrl);
+        ws.current = new WebSocket(wsUrl);
+
+        ws.current.onopen = () => console.log("WebSocket Connected ✅");
+        ws.current.onerror = (err) => console.error("WebSocket Error ❌:", err);
 
         ws.current.onmessage = (event) => {
             const data = JSON.parse(event.data);
