@@ -12,80 +12,17 @@ export default function BookReader() {
 
     const [book, setBook] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [fontSize, setFontSize] = useState(18);
-    const [darkMode, setDarkMode] = useState(true);
-    const [chapters, setChapters] = useState([]);
-    const [currentChapter, setCurrentChapter] = useState(parseInt(pageId) || 0);
-    const [progress, setProgress] = useState(0);
-    const contentRef = useRef(null);
+    const [sidebarOpen, setSidebarOpen] = useState(false); // Default to false for mobile
 
+    // Detect screen size to set default sidebar state
     useEffect(() => {
-        setLoading(true);
-        api.get(`/books/${id}`)
-            .then(res => {
-                const bookData = res.data;
-                setBook(bookData);
-
-                if (bookData.fullStory) {
-                    const sections = bookData.fullStory.split(/## /).filter(s => s.trim());
-                    const parsed = sections.map((s, index) => {
-                        const lines = s.split("\n");
-                        return {
-                            id: index,
-                            title: lines[0].replace("##", "").trim(),
-                            content: lines.slice(1).join("\n").trim()
-                        };
-                    });
-                    setChapters(parsed);
-
-                    // Resume Logic: If lastPage exists and we are at page 0
-                    if (bookData.lastPage > 0 && (!pageId || pageId === "0")) {
-                        const confirmResume = window.confirm(`Resume ${bookData.title} from page ${bookData.lastPage + 1}?`);
-                        if (confirmResume) {
-                            navigate(`/read/${id}/${bookData.lastPage}`);
-                        }
-                    }
-                }
-                setLoading(false);
-            })
-            .catch(err => {
-                console.error("Failed to fetch book", err);
-                setLoading(false);
-            });
-    }, [id]);
-
-    // Auto-save progress
-    useEffect(() => {
-        if (currentChapter !== undefined && !loading) {
-            api.post(`/books/${id}/progress`, { page_index: currentChapter })
-                .catch(err => console.error("Failed to save progress", err));
+        if (window.innerWidth >= 768) {
+            setSidebarOpen(true);
         }
-    }, [currentChapter, id, loading]);
+    }, []);
 
-    useEffect(() => {
-        if (pageId !== undefined) {
-            const idx = parseInt(pageId);
-            if (idx !== currentChapter) {
-                setCurrentChapter(idx);
-                if (contentRef.current) {
-                    contentRef.current.scrollTo({ top: 0, behavior: "smooth" });
-                }
-            }
-        }
-    }, [pageId]);
-
-    const handleScroll = (e) => {
-        const { scrollTop, scrollHeight, clientHeight } = e.target;
-        if (scrollHeight > clientHeight) {
-            const scrolled = (scrollTop / (scrollHeight - clientHeight)) * 100;
-            setProgress(scrolled);
-        }
-    };
-
-    const onNavigate = (index) => {
-        navigate(`/read/${id}/${index}`);
-    };
+    const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+    const closeSidebar = () => setSidebarOpen(false);
 
     if (loading) {
         return (
@@ -115,49 +52,51 @@ export default function BookReader() {
             </div>
 
             {/* Header */}
-            <header className={`fixed top-0 left-0 right-0 h-16 z-50 flex items-center justify-between px-6 border-b backdrop-blur-3xl transition-colors duration-500 ${darkMode ? "bg-black/40 border-white/5" : "bg-white/70 border-slate-200"
+            <header className={`fixed top-0 left-0 right-0 h-16 z-50 flex items-center justify-between px-4 md:px-6 border-b backdrop-blur-3xl transition-colors duration-500 ${darkMode ? "bg-black/40 border-white/5" : "bg-white/70 border-slate-200"
                 }`}>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 md:gap-4">
                     <button
                         onClick={() => navigate("/")}
                         className={`p-2 rounded-full transition-all ${darkMode ? "hover:bg-white/5" : "hover:bg-black/5"}`}
                     >
                         <ChevronLeft size={20} />
                     </button>
-                    <div className="flex flex-col">
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-blue-500/80 mb-0.5">Premium Library</span>
-                        <h2 className="text-xs font-black tracking-tight truncate max-w-[150px] md:max-w-md uppercase">
+                    <div className="flex flex-col min-w-0">
+                        <span className="text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] text-blue-500/80 mb-0.5">Premium Library</span>
+                        <h2 className="text-[10px] md:text-xs font-black tracking-tight truncate max-w-[120px] md:max-w-md uppercase">
                             {book.title}
                         </h2>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 md:gap-3">
                     {/* Controls */}
                     <button
                         onClick={() => setDarkMode(!darkMode)}
-                        className={`p-2.5 rounded-xl transition-all ${darkMode ? "bg-white/5 hover:bg-white/10" : "bg-black/5 hover:bg-black/10"}`}
+                        className={`p-2 md:p-2.5 rounded-xl transition-all ${darkMode ? "bg-white/5 hover:bg-white/10" : "bg-black/5 hover:bg-black/10"}`}
                     >
                         {darkMode ? <Sun size={18} /> : <Moon size={18} />}
                     </button>
                     <div className={`flex items-center gap-1 p-1 rounded-xl transition-colors ${darkMode ? "bg-white/5" : "bg-black/5"}`}>
-                        <button onClick={() => setFontSize(Math.max(12, fontSize - 2))} className="p-1.5 hover:opacity-100 opacity-60"><Minus size={16} /></button>
-                        <div className="w-8 text-center text-[11px] font-black">{fontSize}</div>
-                        <button onClick={() => setFontSize(Math.min(36, fontSize + 2))} className="p-1.5 hover:opacity-100 opacity-60"><Plus size={16} /></button>
+                        <button onClick={() => setFontSize(Math.max(12, fontSize - 2))} className="p-1 hover:opacity-100 opacity-60"><Minus size={14} /></button>
+                        <div className="w-6 md:w-8 text-center text-[10px] md:text-[11px] font-black">{fontSize}</div>
+                        <button onClick={() => setFontSize(Math.min(36, fontSize + 2))} className="p-1 hover:opacity-100 opacity-60"><Plus size={14} /></button>
                     </div>
                 </div>
             </header>
 
-            <div className="flex pt-16 h-[calc(100vh-64px)] overflow-hidden">
+            <div className="flex pt-16 h-[calc(100vh-64px)] overflow-hidden relative">
                 <Sidebar
                     pages={chapters}
                     activeId={currentChapter}
                     onNavigate={onNavigate}
                     darkMode={darkMode}
+                    isOpen={sidebarOpen}
+                    onClose={closeSidebar}
                 />
 
                 <main
-                    className={`flex-1 overflow-y-auto transition-all duration-500 ${sidebarOpen ? "pl-72" : "pl-0"}`}
+                    className={`flex-1 overflow-y-auto transition-all duration-500 ${sidebarOpen ? "md:pl-72" : "pl-0"}`}
                     ref={contentRef}
                     onScroll={handleScroll}
                 >
@@ -170,19 +109,19 @@ export default function BookReader() {
                     />
 
                     {/* Navigation Footer */}
-                    <div className="max-w-3xl mx-auto px-8 md:px-12 pb-24 flex items-center justify-between">
+                    <div className="max-w-3xl mx-auto px-6 md:px-12 pb-24 flex items-center justify-between gap-4">
                         <button
                             disabled={currentChapter === 0}
                             onClick={() => onNavigate(currentChapter - 1)}
-                            className={`px-8 py-3 rounded-2xl font-bold text-sm transition-all ${darkMode ? "bg-white/5 hover:bg-white/10" : "bg-black/5 hover:bg-black/10"
+                            className={`flex-1 md:flex-none px-4 md:px-8 py-3 rounded-2xl font-bold text-xs md:text-sm transition-all ${darkMode ? "bg-white/5 hover:bg-white/10" : "bg-black/5 hover:bg-black/10"
                                 } disabled:opacity-20`}
                         >
-                            Previous Page
+                            Previous
                         </button>
                         <button
                             disabled={currentChapter === chapters.length - 1}
                             onClick={() => onNavigate(currentChapter + 1)}
-                            className="px-8 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white shadow-xl shadow-blue-600/30 font-bold text-sm transition-all active:scale-95"
+                            className="flex-1 md:flex-none px-4 md:px-8 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white shadow-xl shadow-blue-600/30 font-bold text-xs md:text-sm transition-all active:scale-95"
                         >
                             Next Page
                         </button>
@@ -192,9 +131,9 @@ export default function BookReader() {
 
             {/* Sidebar Toggle Float */}
             <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className={`fixed bottom-8 left-8 p-4 rounded-2xl shadow-2xl z-50 transition-all ${darkMode ? "bg-blue-600 hover:bg-blue-500 text-white" : "bg-blue-600 hover:bg-blue-500 text-white"
-                    } active:scale-90`}
+                onClick={toggleSidebar}
+                className={`fixed bottom-6 right-6 md:bottom-8 md:left-8 p-4 rounded-2xl shadow-2xl z-50 transition-all ${darkMode ? "bg-blue-600 hover:bg-blue-500 text-white" : "bg-blue-600 hover:bg-blue-500 text-white"
+                    } active:scale-90 md:hidden`}
             >
                 <List size={24} />
             </button>
