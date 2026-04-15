@@ -12,7 +12,7 @@ export default function BookGrid() {
     const navigate = useNavigate();
 
     // Backend base URL for static assets
-    const BACKEND_BASE = "http://localhost:8000";
+    const BACKEND_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
 
     useEffect(() => {
         api.get("/books")
