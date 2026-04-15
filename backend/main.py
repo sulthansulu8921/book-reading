@@ -25,6 +25,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.on_event("startup")
+def on_startup():
+    db = SessionLocal()
+    try:
+        if db.query(Book).count() == 0:
+            print("Database empty, seeding...")
+            from seed import seed
+            seed()
+    except Exception as e:
+        print(f"Startup seeding failed: {e}")
+    finally:
+        db.close()
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
