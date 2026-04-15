@@ -28,7 +28,7 @@ export default function BookGrid() {
             });
 
         // Fetch recent reading progress
-        api.get("/api/books/recent")
+        api.get("/books/recent")
             .then(res => setRecentBooks(res.data))
             .catch(err => console.error("Recent books failed", err));
     }, []);
