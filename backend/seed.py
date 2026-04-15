@@ -126,13 +126,25 @@ def generate_immersive_story(title_ml, summary, book_key):
         
     return story
 
+from models import SessionLocal, Book, User, engine
+from auth import get_password_hash
+from models import Base
+
 def seed():
     os.makedirs("static/covers", exist_ok=True)
     db = SessionLocal()
     
-    # Refresh table
-    Book.__table__.drop(engine, checkfirst=True)
-    Book.__table__.create(engine, checkfirst=True)
+    # Refresh tables
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    
+    # Seed default user
+    default_user = User(
+        username="sulthan",
+        password_hash=get_password_hash("sulthan"),
+        pfp_url="https://api.dicebear.com/7.x/avataaars/svg?seed=sulthan"
+    )
+    db.add(default_user)
     
     books_data = [
         # Original 15
