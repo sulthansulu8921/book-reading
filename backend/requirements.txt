@@ -7,7 +7,3 @@ passlib[bcrypt]
 python-multipart
 python-jose[cryptography]
 requests
-framer-motion
-lucide-react
-axios
-react-router-dom
