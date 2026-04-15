@@ -20,7 +20,10 @@ export default function PdfViewer() {
         );
     }
 
-    const backendPdfUrl = `http://localhost:8000${pdfUrl}`;
+    const BACKEND_BASE = (import.meta.env.VITE_BACKEND_URL && import.meta.env.VITE_BACKEND_URL !== "undefined")
+        ? import.meta.env.VITE_BACKEND_URL
+        : "http://localhost:8000";
+    const backendPdfUrl = `${BACKEND_BASE}${pdfUrl}`;
 
     return (
         <div className="h-screen w-full flex flex-col bg-[#525659]">
