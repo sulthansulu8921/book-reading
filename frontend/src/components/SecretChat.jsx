@@ -30,9 +30,9 @@ export default function SecretChat() {
 
         fetchUsers();
 
-        const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
-        const wsProtocol = backendUrl.startsWith("https") ? "wss" : "ws";
-        const wsHost = backendUrl.replace(/^https?:\/\//, "").replace(/\/+$/, "");
+        const rawUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+        const wsProtocol = rawUrl.startsWith("https") ? "wss" : "ws";
+        const wsHost = rawUrl.replace(/^https?:\/\//, "").replace(/\/+$/, "").replace(/\/api$/, "");
 
         ws.current = new WebSocket(`${wsProtocol}://${wsHost}/ws/${token}`);
 
