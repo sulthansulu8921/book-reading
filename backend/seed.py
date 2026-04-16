@@ -143,12 +143,16 @@ def seed():
         {"u": "fdhu", "p": "fdhu123", "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Milo&skinColor=ffdbac"}
     ]
     for u_data in users:
-        user = User(
-            username=u_data["u"],
-            password_hash=get_password_hash(u_data["p"]),
-            pfp_url=u_data["avatar"]
-        )
-        db.add(user)
+        existing = db.query(User).filter(User.username == u_data["u"]).first()
+        if existing:
+            existing.pfp_url = u_data["avatar"]
+        else:
+            user = User(
+                username=u_data["u"],
+                password_hash=get_password_hash(u_data["p"]),
+                pfp_url=u_data["avatar"]
+            )
+            db.add(user)
     
     books_data = [
         # Original 15
