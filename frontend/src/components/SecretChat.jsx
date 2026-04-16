@@ -32,8 +32,8 @@ export default function SecretChat() {
 
         const rawUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
         const wsProtocol = rawUrl.startsWith("https") ? "wss" : "ws";
-        const wsHost = rawUrl.replace(/^https?:\/\//, "").replace(/\/+$/, "");
-        const wsUrl = `${wsProtocol}://${wsHost}/ws?token=${encodeURIComponent(token)}`;
+        const domain = rawUrl.replace(/^https?:\/\//, "").replace(/\/+$/, "").replace(/\/api$/, "");
+        const wsUrl = `${wsProtocol}://${domain}/api/ws?token=${encodeURIComponent(token)}`;
 
         console.log("Connecting to WebSocket:", wsUrl);
         ws.current = new WebSocket(wsUrl);
