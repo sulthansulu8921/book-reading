@@ -139,14 +139,14 @@ def seed():
     
     # Seed default users
     users = [
-        {"u": "sulthan", "p": "sulthan"},
-        {"u": "fdhu", "p": "fdhu123"}
+        {"u": "sulthan", "p": "sulthan", "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&skinColor=ffdbac"},
+        {"u": "fdhu", "p": "fdhu123", "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Milo&skinColor=ffdbac"}
     ]
     for u_data in users:
         user = User(
             username=u_data["u"],
             password_hash=get_password_hash(u_data["p"]),
-            pfp_url=f"https://api.dicebear.com/7.x/avataaars/svg?seed={u_data['u']}"
+            pfp_url=u_data["avatar"]
         )
         db.add(user)
     
